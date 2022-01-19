@@ -1,10 +1,17 @@
 import React from 'react';
 import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import PropTypes from 'prop-types';
+import {uploadsUrl} from '../utils/varilables';
+import {NavigationContainer} from '@react-navigation/native';
 
 const ListItem = (props) => {
   return (
-    <TouchableOpacity style={styles.row}>
+    <TouchableOpacity
+      style={styles.row}
+      omPress={() => {
+        navigation.navigate('Single');
+      }}
+    >
       <View style={styles.imagebox}>
         <Image
           source={{uri: props.singleMedia.thumbnails.w160}}
