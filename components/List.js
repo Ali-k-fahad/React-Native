@@ -2,6 +2,7 @@ import React from 'react';
 import {FlatList} from 'react-native';
 import ListItem from './ListItem';
 
+<<<<<<< Updated upstream
 const mediaArray = [
   {
     key: '0',
@@ -34,14 +35,28 @@ const mediaArray = [
     filename: 'http://placekitten.com/2039/1920',
   },
 ];
+=======
+const List = ({navigation}) => {
+  const {mediaArray} = useMedia();
+>>>>>>> Stashed changes
 
 const List = () => {
   return (
     <FlatList
       data={mediaArray}
+<<<<<<< Updated upstream
       renderItem={({item}) => <ListItem singleMedia={item} />}
+=======
+      keyExtractor={(item) => item.file_id.toString()}
+      renderItem={({item}) => (
+        <ListItem navigation={{navigation}} singleMedia={item} />
+      )}
+>>>>>>> Stashed changes
     ></FlatList>
   );
+};
+List.propTypes = {
+  navigation: propTypes.object,
 };
 
 export default List;
