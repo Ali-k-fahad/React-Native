@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import Home from '../views/Home';
 import Profile from '../views/Profile';
 import Single from '../views/Single';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
