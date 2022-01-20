@@ -1,16 +1,27 @@
 import React, {useContext, useEffect} from 'react';
-import {StyleSheet, View, Text, Button} from 'react-native';
+import {StyleSheet, View, Text} from 'react-native';
 import PropTypes from 'prop-types';
 import {MainContext} from '../contexts/MainContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useUser} from '../hooks/ApiHooks';
+import LoginForm from '../components/LoginForm';
 
 const Login = ({navigation}) => {
   const {setIsLoggedIn} = useContext(MainContext);
+  const {getUserByToken} = useUser();
+
   const checkToken = async () => {
-    const userToken = AsyncStorage.getItem('userToken');
-    console.log('token', userToken);
-    if (userToken === 'asdfgh') {
+    const userToken = await AsyncStorage.getItem('userToken');
+    // console.log('token value in async storage', userToken);
+    if (!userToken) {
+      return;
+    }
+    try {
+      const userData = await getUserByToken(userToken);
+      console.log('chekToken', userData);
       setIsLoggedIn(true);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -18,15 +29,10 @@ const Login = ({navigation}) => {
     checkToken();
   }, []);
 
-  const logIn = async () => {
-    console.log('Button pressed');
-    await AsyncStorage.setItem('userToken', 'asdfgh');
-    setIsLoggedIn(true);
-  };
   return (
     <View style={styles.container}>
       <Text>Login</Text>
-      <Button title="Sign in!" onPress={logIn} />
+      <LoginForm />
     </View>
   );
 };
