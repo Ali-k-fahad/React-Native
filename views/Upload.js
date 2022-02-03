@@ -1,26 +1,31 @@
-import React, {useContext, useState} from 'react';
+import React, {useCallback, useContext, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Alert, ScrollView, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Controller, useForm} from 'react-hook-form';
-import {Button, Card, Input, Text} from 'react-native-elements';
+import {Button, Card, Input} from 'react-native-elements';
 import * as ImagePicker from 'expo-image-picker';
-import {useMedia} from '../hooks/ApiHooks';
+import {useMedia, useTag} from '../hooks/ApiHooks';
 import {MainContext} from '../contexts/MainContext';
+import {useFocusEffect} from '@react-navigation/native';
+import {appId} from '../utils/variables';
+import {Video} from 'expo-av';
 
 const Upload = ({navigation}) => {
   const [image, setImage] = useState(
     'https://place-hold.it/300x200&text=Choose'
   );
-  const [type, setType] = useState('');
+  const [type, setType] = useState('image');
   const [imageSelected, setImageSelected] = useState(false);
-  const {postMedia} = useMedia();
+  const {postMedia, loading} = useMedia();
+  const {postTag} = useTag();
   const {update, setUpdate} = useContext(MainContext);
 
   const {
     control,
     handleSubmit,
     formState: {errors},
+    setValue,
   } = useForm({
     defaultValues: {
       title: '',
@@ -43,6 +48,20 @@ const Upload = ({navigation}) => {
     }
   };
 
+  const reset = () => {
+    setImage('https://place-hold.it/300x200&text=Choose');
+    setImageSelected(false);
+    setValue('title', '');
+    setValue('description', '');
+    setType('image');
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => reset();
+    }, [])
+  );
+
   const onSubmit = async (data) => {
     if (!imageSelected) {
       Alert.alert('Please, select a file');
@@ -64,31 +83,52 @@ const Upload = ({navigation}) => {
       const token = await AsyncStorage.getItem('userToken');
       const response = await postMedia(formData, token);
       console.log('upload response', response);
-      Alert.alert('File', 'uploaded', [
+      const tagResponse = await postTag(
         {
-          text: 'Ok',
-          onPress: () => {
-            // TODO: clear the form values here after submission
-            setUpdate(update + 1);
-            navigation.navigate('Home');
-          },
+          file_id: response.file_id,
+          tag: appId,
         },
-      ]);
+        token
+      );
+      console.log('tag response', tagResponse);
+      tagResponse &&
+        Alert.alert('File', 'uploaded', [
+          {
+            text: 'Ok',
+            onPress: () => {
+              setUpdate(update + 1);
+              navigation.navigate('Home');
+            },
+          },
+        ]);
     } catch (error) {
       // You should notify the user about problems here
       console.log('onSubmit upload image problem');
     }
   };
 
+  console.log('type', type);
+
   return (
     <ScrollView>
       <Card>
-        <Card.Image
-          source={{uri: image}}
-          style={styles.image}
-          onPress={pickImage}
-        ></Card.Image>
-
+        {type === 'image' ? (
+          <Card.Image
+            source={{uri: image}}
+            style={styles.image}
+            onPress={pickImage}
+          ></Card.Image>
+        ) : (
+          <Video
+            source={{uri: image}}
+            style={styles.image}
+            useNativeControls={true}
+            resizeMode="cover"
+            onError={(err) => {
+              console.error('video', err);
+            }}
+          />
+        )}
         <Controller
           control={control}
           rules={{
@@ -101,11 +141,11 @@ const Upload = ({navigation}) => {
               value={value}
               autoCapitalize="none"
               placeholder="Title"
+              errorMessage={errors.title && 'This is required.'}
             />
           )}
           name="title"
         />
-        {errors.title && <Text>This is required.</Text>}
 
         <Controller
           control={control}
@@ -119,14 +159,20 @@ const Upload = ({navigation}) => {
               value={value}
               autoCapitalize="none"
               placeholder="Description"
+              errorMessage={errors.description && 'This is required.'}
             />
           )}
           name="description"
         />
-        {errors.description && <Text>This is required.</Text>}
 
         <Button title="Choose image" onPress={pickImage} />
-        <Button title="Upload" onPress={handleSubmit(onSubmit)} />
+        <Button
+          disabled={!imageSelected}
+          loading={loading}
+          title="Upload"
+          onPress={handleSubmit(onSubmit)}
+        />
+        <Button title="Reset form" onPress={reset} />
       </Card>
     </ScrollView>
   );
